@@ -1,0 +1,39 @@
+{
+    "name": "quanta/http-exception-handler",
+    "type": "library",
+    "description": "Minimalist exception handler library",
+    "keywords": [
+        "error",
+        "exception",
+        "error-handler",
+        "exception-handler"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/quantaphp/http-exception-handler",
+    "support": {
+        "issues": "https://github.com/quantaphp/http-exception-handler/issues",
+        "source": "https://github.com/quantaphp/http-exception-handler"
+    },
+    "authors": [
+        {
+            "name": "pmall",
+            "email": "pierre.mallinjoud@gmail.com"
+        }
+    ],
+    "config": {
+        "sort-packages": true
+    },
+    "require": {
+        "php": ">=7.0"
+    },
+    "require-dev": {
+        "eloquent/phony-kahlan": "^2.0",
+        "kahlan/kahlan": "^4.0",
+        "phpstan/phpstan": "^0.11.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quanta\\Http\\": "src"
+        }
+    }
+}
