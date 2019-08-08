@@ -47,7 +47,7 @@ final class Utils
         $e = array_shift($exs);
 
         ob_start();
-        require implode('/', [__DIR__, '../templates', $template]);
+        require implode(DIRECTORY_SEPARATOR, [__DIR__, '..', '..', 'templates', $template]);
         return ($body = ob_get_clean()) ? $body : '';
     }
 
