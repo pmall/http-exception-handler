@@ -45,6 +45,7 @@
             </ul>
             <?php endif; ?>
             <?php if (isset($exs)): ?>
+            <?php if (is_array($exs) && count($exs) > 0): ?>
             <h2>Thrown during exception handling</h2>
             <?php foreach ($exs as $e): ?>
             <ul>
@@ -61,6 +62,7 @@
                 <?php endforeach; ?>
             </ul>
             <?php endforeach; ?>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
     </body>
