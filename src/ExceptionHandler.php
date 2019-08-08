@@ -16,70 +16,87 @@ final class ExceptionHandler
     const FATAL = E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING | E_STRICT;
 
     /**
-     * The min output buffer level
+     * Whether the exceptions should be rendered.
+     *
+     * @var bool
      */
+    private $render;
 
     /**
      * Whether the errors should be handled as exceptions.
      *
      * @var bool
      */
-    private $handleErrors;
+    private $errors;
 
     /**
-     * The last exception handler - should be used to emit a response.
+     * The last exception handler.
      *
-     * @var \Quanta\Http\ExceptionHandlerInterface
+     * Should be used to emit a response.
+     *
+     * @var callable
      */
     private $renderer;
 
     /**
-     * The exception handlers executed before the renderer - should be used to
-     * log exceptions.
+     * The exception handlers executed before the renderer.
      *
-     * @var \Quanta\Http\ExceptionHandlerInterface[]
+     * Should be used to log exceptions.
+     *
+     * @var callable[]
      */
     private $handlers;
 
     /**
-     * Register the handlers with the default renderer.
+     * Return an exception handler with the default renderer.
      *
-     * @param bool $debug
-     * @param bool $handleErrors
+     * @param bool $render
+     * @param bool $errors
+     * @return \Quanta\Http\ExceptionHandler
      */
-    public static function default(bool $debug = false, bool $handleErrors = false): self
+    public static function default(bool $render = false, bool $errors = false): self
     {
-        $renderer = new DefaultExceptionRenderer($debug);
-
-        return new self($handleErrors, $renderer);
+        return new self($render, $errors, new DefaultExceptionRenderer);
     }
 
     /**
      * Constructor.
      *
-     * @param bool                                      $handleErrors
-     * @param \Quanta\Http\ExceptionHandlerInterface    $renderer
-     * @param \Quanta\Http\ExceptionHandlerInterface    ...$handlers
+     * @param bool      $render
+     * @param bool      $errors
+     * @param callable  $renderer
+     * @param callable  ...$handlers
      */
-    public function __construct(
-        bool $handleErrors,
-        ExceptionHandlerInterface $renderer,
-        ExceptionHandlerInterface ...$handlers
-    ) {
-        $this->handleErrors = $handleErrors;
+    public function __construct(bool $render, bool $errors, callable $renderer, callable ...$handlers)
+    {
+        $this->render = $render;
+        $this->errors = $errors;
         $this->renderer = $renderer;
         $this->handlers = $handlers;
     }
 
     /**
-     * Set whether the errors should be handled as exceptions.
+     * Set whether the exceptions should be rendered.
      *
-     * @param bool $handleErrors
+     * @param bool $render
      * @return \Quanta\Http\ExceptionHandler
      */
-    public function shouldHandleErrors(bool $handleErrors = true): self
+    public function shouldRender(bool $render = true): self
     {
-        $this->handleErrors = $handleErrors;
+        $this->render = $render;
+
+        return $this;
+    }
+
+    /**
+     * Set whether the errors should be handled as exceptions.
+     *
+     * @param bool $errors
+     * @return \Quanta\Http\ExceptionHandler
+     */
+    public function shouldHandleErrors(bool $errors = true): self
+    {
+        $this->errors = $errors;
 
         return $this;
     }
@@ -87,10 +104,10 @@ final class ExceptionHandler
     /**
      * Set the last exception handler.
      *
-     * @param \Quanta\Http\ExceptionHandlerInterface $handler
+     * @param callable $handler
      * @return \Quanta\Http\ExceptionHandler
      */
-    public function setRenderer(ExceptionHandlerInterface $handler): self
+    public function setRenderer(callable $handler): self
     {
         $this->renderer = $handler;
 
@@ -100,10 +117,10 @@ final class ExceptionHandler
     /**
      * Add an exception handler.
      *
-     * @param \Quanta\Http\ExceptionHandlerInterface $handler
+     * @param callable $handler
      * @return \Quanta\Http\ExceptionHandler
      */
-    public function addHandler(ExceptionHandlerInterface $handler): self
+    public function addHandler(callable $handler): self
     {
         $this->handlers[] = $handler;
 
@@ -146,11 +163,27 @@ final class ExceptionHandler
 
         while (ob_get_level() > 0) ob_end_clean();
 
+        $exs = [];
+
         foreach ($this->handlers as $handler) {
-            $handler($e);
+            try { $handler($e); }
+            catch (\Throwable $ex) { $exs[] = $ex; }
         }
 
-        ($this->renderer)($e);
+        if ($this->render) {
+            try { ($this->renderer)($e, ...$exs); }
+            catch (\Throwable $e) { echo (string) $e; }
+        } else {
+            $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+
+            if (ExceptionHandler\Utils::shouldEmitJson($accept)) {
+                header('application/json');
+                echo ExceptionHandler\Utils::json();
+            } else {
+                header('text/html');
+                echo ExceptionHandler\Utils::html('blank.php');
+            }
+        }
     }
 
     /**
@@ -170,7 +203,7 @@ final class ExceptionHandler
      */
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
-        if ($this->handleErrors && ($errno & error_reporting()) > 0) {
+        if ($this->errors && ($errno & error_reporting()) > 0) {
             throw new \ErrorException($errstr, $errno, $errno, $errfile, $errline);
         }
 
@@ -187,7 +220,7 @@ final class ExceptionHandler
      */
     public function shutdown()
     {
-        if ($this->handleErrors) {
+        if ($this->errors) {
             $e = error_get_last();
 
             if (! is_null($e) && ($e['type'] & self::FATAL & error_reporting()) > 0) {
