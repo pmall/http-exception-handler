@@ -8,7 +8,7 @@
         <style>
             body { font-family: 'Titillium Web', sans-serif; }
             small { color: #555; }
-            div.container { margin: 0 auto; padding-bottom: 1024px; }
+            div.container { margin: 0 auto; }
             ul { margin: 0; padding: 0; list-style: none; }
             li { margin: 1em 0; padding: 0.5em; background-color: #f0f8ff; border: 1px solid #80c3ff; }
             p { margin: 0 0 0.5em 0; }

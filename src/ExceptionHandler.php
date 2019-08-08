@@ -159,9 +159,7 @@ final class ExceptionHandler
      */
     public function handleException(\Throwable $e)
     {
-        header_remove();
-
-        while (ob_get_level() > 0) ob_end_clean();
+        ob_start();
 
         $exs = [];
 
@@ -170,9 +168,16 @@ final class ExceptionHandler
             catch (\Throwable $ex) { $exs[] = $ex; }
         }
 
+        $output = ob_get_clean();
+
+        header_remove();
+
+        while (ob_get_level() > 0) ob_end_clean();
+
         if ($this->render) {
             try { ($this->renderer)($e, ...$exs); }
             catch (\Throwable $e) { echo (string) $e; }
+            echo $output;
         } else {
             $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
 
