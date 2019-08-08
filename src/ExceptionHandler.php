@@ -47,26 +47,11 @@ final class ExceptionHandler
      * @param bool $debug
      * @param bool $handleErrors
      */
-    public static function register(bool $debug = false, bool $handleErrors = false): self
+    public static function default(bool $debug = false, bool $handleErrors = false): self
     {
         $renderer = new DefaultExceptionRenderer($debug);
 
-        $handler = new self($handleErrors, $renderer);
-
-        /** @var callable */
-        $handleException = [$handler, 'handleException'];
-
-        /** @var callable */
-        $handleError = [$handler, 'handleError'];
-
-        /** @var callable */
-        $shutdown = [$handler, 'shutdown'];
-
-        set_exception_handler($handleException);
-        set_error_handler($handleError);
-        register_shutdown_function($shutdown);
-
-        return $handler;
+        return new self($handleErrors, $renderer);
     }
 
     /**
@@ -123,6 +108,27 @@ final class ExceptionHandler
         $this->handlers[] = $handler;
 
         return $this;
+    }
+
+    /**
+     * Register this exception handler.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        /** @var callable */
+        $handleException = [$this, 'handleException'];
+
+        /** @var callable */
+        $handleError = [$this, 'handleError'];
+
+        /** @var callable */
+        $shutdown = [$this, 'shutdown'];
+
+        set_exception_handler($handleException);
+        set_error_handler($handleError);
+        register_shutdown_function($shutdown);
     }
 
     /**
