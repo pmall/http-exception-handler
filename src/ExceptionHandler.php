@@ -54,9 +54,24 @@ final class ExceptionHandler
      * @param bool $errors
      * @return \Quanta\Http\ExceptionHandler
      */
-    public static function default(bool $render = false, bool $errors = false): self
+    public static function register(bool $render = false, bool $errors = false): self
     {
-        return new self($render, $errors, new DefaultExceptionRenderer);
+        $handler = new self($render, $errors, new DefaultExceptionRenderer);
+
+        /** @var callable */
+        $exception = [$handler, 'exception'];
+
+        /** @var callable */
+        $error = [$handler, 'error'];
+
+        /** @var callable */
+        $shutdown = [$handler, 'shutdown'];
+
+        set_exception_handler($exception);
+        set_error_handler($error);
+        register_shutdown_function($shutdown);
+
+        return $handler;
     }
 
     /**
@@ -128,27 +143,6 @@ final class ExceptionHandler
     }
 
     /**
-     * Register this exception handler.
-     *
-     * @return void
-     */
-    public function register()
-    {
-        /** @var callable */
-        $handleException = [$this, 'handleException'];
-
-        /** @var callable */
-        $handleError = [$this, 'handleError'];
-
-        /** @var callable */
-        $shutdown = [$this, 'shutdown'];
-
-        set_exception_handler($handleException);
-        set_error_handler($handleError);
-        register_shutdown_function($shutdown);
-    }
-
-    /**
      * Clean the sent headers and unflushed buffers then execute the exception
      * handlers for the given exception.
      *
@@ -157,7 +151,7 @@ final class ExceptionHandler
      * @param \Throwable $e
      * @return void
      */
-    public function handleException(\Throwable $e)
+    public function exception(\Throwable $e)
     {
         $exs = [];
 
@@ -197,7 +191,7 @@ final class ExceptionHandler
      * @return bool
      * @throws \ErrorException
      */
-    public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
+    public function error(int $errno, string $errstr, string $errfile, int $errline): bool
     {
         if ($this->errors && ($errno & error_reporting()) > 0) {
             throw new \ErrorException($errstr, $errno, $errno, $errfile, $errline);
@@ -220,7 +214,7 @@ final class ExceptionHandler
             $e = error_get_last();
 
             if (! is_null($e) && ($e['type'] & self::FATAL & error_reporting()) > 0) {
-                $this->handleException(
+                $this->exception(
                     new \ErrorException(
                         $e['message'],
                         $e['type'],
