@@ -14,10 +14,10 @@ final class DefaultExceptionRenderer
         $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
 
         if (ExceptionHandler\Utils::shouldEmitJson($accept)) {
-            header('application/json');
+            header('content-type: application/json');
             echo ExceptionHandler\Utils::json($e, ...$exs);
         } else {
-            header('text/html');
+            header('content-type: text/html');
             echo ExceptionHandler\Utils::html('exception.php', $e, ...$exs);
         }
     }
