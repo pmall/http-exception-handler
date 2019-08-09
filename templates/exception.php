@@ -45,11 +45,11 @@
             </ul>
             <?php endif; ?>
             <?php if (isset($exs)): ?>
-            <?php if (is_array($exs) && count($exs) > 0): ?>
-            <h2>Thrown during exception handling</h2>
-            <?php foreach ($exs as $e): ?>
+            <?php if (is_array($exs)): ?>
+            <?php for ($i = 0; count($exs) > $i; $i++): ?>
+            <h2>Thrown from exception handler #<?= $i + 1 ?></h2>
             <ul>
-                <?php foreach ($stack($e) as $exception): ?>
+                <?php foreach ($stack($exs[$i]) as $exception): ?>
                 <li>
                     <p>
                         <strong><?= get_class($exception) ?></strong>:
@@ -61,7 +61,7 @@
                 </li>
                 <?php endforeach; ?>
             </ul>
-            <?php endforeach; ?>
+            <?php endfor; ?>
             <?php endif; ?>
             <?php endif; ?>
         </div>
